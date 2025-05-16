@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatGPT-4o Image Generation - Interactive Showcase</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #121212;
+        color: #e0e0e0;
+      }
+      .video-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        max-width: 100%;
+        background: #000;
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      }
+      .video-container iframe,
+      .video-container video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .idea-card {
+        background-color: #1e1e1e;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        transition: transform 0.2s ease-in-out;
+      }
+      .idea-card:hover {
+        transform: translateY(-5px);
+      }
+      .idea-card h3 {
+        color: #60a5fa;
+        font-size: 1.25rem;
+        line-height: 1.75rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+      .idea-card p {
+        margin-bottom: 1rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        color: #a0a0a0;
+      }
+      .input-field,
+      .api-key-input {
+        background-color: #2d2d2d;
+        color: #e0e0e0;
+        border: 1px solid #4a4a4a;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        width: 100%;
+        margin-bottom: 0.75rem;
+      }
+      .btn-primary {
+        background-color: #60a5fa;
+        color: #121212;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.25rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        border: none;
+      }
+      .btn-primary:hover {
+        background-color: #3b82f6;
+      }
+      .btn-primary:disabled {
+        background-color: #4a4a4a;
+        cursor: not-allowed;
+      }
+      .generated-image-container {
+        border: 1px dashed #4a4a4a;
+        padding: 1rem;
+        margin-top: 1rem;
+        text-align: center;
+        min-height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #252525;
+        border-radius: 0.25rem;
+      }
+      .generated-image-container img {
+        max-width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+        border-radius: 0.25rem;
+      }
+      .image-preview {
+        max-width: 100px;
+        max-height: 100px;
+        margin-top: 0.5rem;
+        border-radius: 0.25rem;
+        border: 1px solid #4a4a4a;
+        object-fit: cover;
+      }
+      .timestamp {
+        font-size: 0.75rem;
+        line-height: 1rem;
+        color: #60a5fa;
+        margin-left: 0.5rem;
+      }
+      .loading-spinner {
+        border: 4px solid #4a4a4a;
+        border-top: 4px solid #60a5fa;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 2rem auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .api-warning {
+        background-color: #4b0000;
+        color: #ffcccb;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid #800000;
+      }
+      .tweet-card {
+        background-color: #1e1e1e;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      .tweet-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+      .tweet-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        margin-right: 0.75rem;
+      }
+      .tweet-author strong {
+        color: #e0e0e0;
+        font-weight: bold;
+      }
+      .tweet-author span {
+        color: #71767b;
+      }
+      .tweet-content {
+        color: #e0e0e0;
+        font-size: 1.1rem;
+        line-height: 1.5;
+        margin-bottom: 0.75rem;
+      }
+      .tweet-meta {
+        color: #71767b;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const AppContext = React.createContext();
+
+      const ideas = [
+        // Introduction & Setup
+        {
+          id: "intro-shark",
+          title: "Wild Thumbnail Recreation (Shark Attack)",
+          description:
+            "Recreate dynamic thumbnails. Example: Man vs. Shark selfie. (0:02, 21:28)",
+          initialPrompt:
+            "A man taking a selfie underwater, looks terrified as a large great white shark with its mouth open approaches him. His shirt is slightly torn. Hyper-realistic, dramatic lighting, action shot.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "intro-bedroom",
+          title: "Bedroom Design from Moodboard",
+          description:
+            "Generate a full bedroom scene from conceptual elements. (0:05, 12:42)",
+          initialPrompt:
+            "Design a bedroom with a dark teal floral wallpaper (gold flowers) on one wall, and sage green paint on other walls. Include a light oak wood bed with sage green bedding, and a dark blue modern nightstand with a spherical white lamp. Photorealistic.",
+          needsImageUpload1: true,
+          image1Desc: "Moodboard (wallpaper, color, furniture)",
+        },
+        {
+          id: "intro-parallax",
+          title: "Animated Parallax Backgrounds",
+          description:
+            "Create layered scenes for parallax effects. (0:09, 27:26)",
+          initialPrompt:
+            "A 2D parallax background for a video game. Theme: Cloud Kingdom. The image should be divided into 3 horizontal layers, same width, stacked vertically. Top row: background (distant clouds, floating islands). Middle row: midground (closer clouds, silhouettes of fantastical structures). Bottom row: foreground (ornate stone platforms, glowing flora). Style: painterly, whimsical.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "intro-actionfigure",
+          title: "Your Own Action Figure",
+          description:
+            "Turn people (or concepts) into packaged action figures. (0:13, 31:53)",
+          initialPrompt:
+            "Create an action figure package for 'AI YouTuber & Founder: Julia McCoy'. She is in a Star Trek style blue science officer mini-dress and black boots. Accessories: small friendly robot, smartphone, studio microphone, laptop, 2 water bottles, Starfleet insignia. Packaging: futuristic purple blister pack, 'ACCESSORIES' label.",
+          needsImageUpload1: true,
+          image1Desc: "Photo of person (optional reference)",
+        },
+
+        // Basic Generation & Style
+        {
+          id: "gta-wolf",
+          title: "GTA-Style Image with Text",
+          description:
+            "Generate an image in a specific game's art style, including text. (1:26)",
+          initialPrompt:
+            "Image of a wolf howling at a full moon, in the distinct art style of Grand Theft Auto 5. Include the text 'Subscribe to Matt Wolfe' prominently.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "miyazaki-split",
+          title: "Miyazaki Hybrid Portrait",
+          description:
+            "Create a portrait that's half photorealistic, half Studio Ghibli style. (1:45)",
+          initialPrompt:
+            "A dramatic, front-facing close-up portrait of Hayao Miyazaki. His face is divided vertically. The left half is hyper-realistic, capturing skin textures and wrinkles. The right half is rendered in the iconic Studio Ghibli animation style. The division between halves is like a torn paper edge. Muted background.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "gaga-analog",
+          title: "Grungy Analog Photo (Lady Gaga)",
+          description: "Simulate a specific photographic style and era. (1:57)",
+          initialPrompt:
+            "A grungy analog photo of Lady Gaga in a luxury lifestyle setting. Flash photography, unedited look, warm vintage tones, slight film grain.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "pope-securitycam",
+          title: "Security Cam Footage (Pope)",
+          description:
+            "Generate a humorous or surreal scene as if captured by a security camera. (2:04)",
+          initialPrompt:
+            "A security camera still from a 1980s grocery store. Pope Francis is caught stealing a bottle of wine, frozen in mid-sprint running past the spirits aisle. Baby blue tiled floors. Timestamp reads '23/01/86 03:23 AM'. Posters on wall say 'NEW! COKE ZERO!' and 'PLEASE DON'T STEAL WINE!'. Low-fidelity with VHS color bleed.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "chipped-nails",
+          title: "Close-up Detailed Photo (Chipped Nails)",
+          description: "Create highly detailed close-up shots. (2:09)",
+          initialPrompt:
+            "A close-up photo of a girl's fingers showing chipped red nail polish flaking off, revealing bare nails underneath. Some chips caught in cuticles. Fingers slightly curled. Harsh, blown-out flash, fisheye lens distortion, grainy, raw 2007 vibe. Background is a messy vanity with spilled polish and cotton pads. Tragic and nostalgic aesthetic.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "queen-card",
+          title: "Surreal Character Emergence (Queen of Hearts)",
+          description:
+            "Illustrate fantastical concepts like characters emerging from objects. (2:16)",
+          initialPrompt:
+            "Portrait of a realistic, beautiful queen emerging from a large playing card depicting the Queen of Hearts. The queen is stepping out of the card, with half her body visible outside the card and half still inside. The playing card is upright and life-sized compared to the queen.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "whiteboard-text",
+          title: "Image with Extensive Text (Whiteboard)",
+          description:
+            "Generate images containing a lot of legible text, like notes on a whiteboard. (2:19)",
+          initialPrompt:
+            "A woman with long dark hair, wearing an OpenAI shirt, seen from the back, writing on a large glass whiteboard. The whiteboard is filled with notes about 'Transfer between Modalities', including sections for 'Pros', 'Cons', and 'Fixes', and a diagram showing 'diffusion -> pixels'. A faint reflection of the Golden Gate Bridge is visible through the window behind the whiteboard.",
+          needsImageUpload1: false,
+        },
+
+        // Style Transfer & Transformation
+        {
+          id: "cyberpunk-style",
+          title: "Cyberpunk Style Transfer",
+          description: "Apply a cyberpunk aesthetic to a subject. (2:58)",
+          initialPrompt:
+            "A photo of a young woman in a simple dress, transformed into a cyberpunk style. Neon lights reflecting on wet streets, futuristic cityscape background, cybernetic enhancements subtly visible on the woman. Highly detailed, vibrant blues and purples.",
+          needsImageUpload1: true,
+          image1Desc: "Original photo for styling",
+        },
+        {
+          id: "paris-painting-styles",
+          title: "Photo to Various Painting Styles",
+          description:
+            "Convert a photograph into different classic painting styles. (3:07)",
+          initialPrompt:
+            "Take the uploaded photo of a Paris street scene and render it in the style of an Impressionist painting by Monet, focusing on light and color.",
+          needsImageUpload1: true,
+          image1Desc: "Photo of Paris street",
+        },
+        {
+          id: "anime-to-pixel",
+          title: "Anime to Pixel Art",
+          description: "Transform an anime-style image into pixel art. (3:22)",
+          initialPrompt:
+            "Convert the uploaded anime image of a character with rainbow hair facing a shadowy figure in a desolate landscape into detailed pixel art, maintaining the composition and mood.",
+          needsImageUpload1: true,
+          image1Desc: "Anime style image",
+        },
+        {
+          id: "cartoon-to-modern-anime",
+          title: "Old Cartoon to Modern Anime",
+          description:
+            "Update an older cartoon style to a modern anime aesthetic. (3:32)",
+          initialPrompt:
+            "Take the uploaded image of cartoon characters at a bar and redraw it in a modern anime style, keeping the funny aspect and speech bubbles intact but updating character designs and background.",
+          needsImageUpload1: true,
+          image1Desc: "Old cartoon image",
+        },
+        {
+          id: "funko-pop-self",
+          title: "Person to Funko Pop",
+          description: "Turn a person into a Funko Pop style figure. (3:43)",
+          initialPrompt:
+            "Create a Funko Pop figure of the uploaded person, with a synthwave background featuring palm trees and a sunset. The Funko Pop should capture their key features in the characteristic style.",
+          needsImageUpload1: true,
+          image1Desc: "Photo of person",
+        },
+        {
+          id: "minecraft-self",
+          title: "Person to Minecraft Character",
+          description:
+            "Convert a person into a Minecraft-style block character. (3:51)",
+          initialPrompt:
+            "Turn the uploaded photo of me (wearing sunglasses and a striped polo) into a Minecraft character, standing in a simple grey studio setting.",
+          needsImageUpload1: true,
+          image1Desc: "Your photo",
+        },
+        {
+          id: "voxel-self",
+          title: "Person to Voxel Art Character",
+          description: "Transform a person into a voxel art style. (3:54)",
+          initialPrompt:
+            "Convert the uploaded photo of me into a voxel art style character. The character should be standing with hands in pockets.",
+          needsImageUpload1: true,
+          image1Desc: "Your photo",
+        },
+        {
+          id: "gta-padres",
+          title: "Photo to GTA Style (Padres Players)",
+          description:
+            "Re-style a real photo in the Grand Theft Auto art style. (3:56)",
+          initialPrompt:
+            "Convert the uploaded photo of two Padres baseball players fist-bumping into the Grand Theft Auto 5 art style. Maintain their likenesses and uniforms.",
+          needsImageUpload1: true,
+          image1Desc: "Photo of Padres players",
+        },
+
+        // Image Editing
+        {
+          id: "thumbnail-text-edit",
+          title: "Thumbnail Text Editing",
+          description:
+            "Change or add text elements within an existing thumbnail. (4:31, 23:09)",
+          initialPrompt:
+            "Take the uploaded YouTube thumbnail. Change the existing text 'Worth it?' to 'Uh... WTF?'. Keep the rest of the design, including the rating stars and the person holding an object, intact.",
+          needsImageUpload1: true,
+          image1Desc: "Original thumbnail",
+        },
+        {
+          id: "image-combine-food",
+          title: "Image Combining (Food & Background)",
+          description:
+            "Composite elements from different images seamlessly. (5:01)",
+          initialPrompt:
+            "Insert the uploaded plate of food into the center of the uploaded fruit background image. Match lighting, shadows, and perspective so it looks natural.",
+          needsImageUpload1: true,
+          image1Desc: "Plate of food",
+          needsImageUpload2: true,
+          image2Desc: "Fruit background",
+        },
+        {
+          id: "anime-in-realworld",
+          title: "Anime Character in Real Background",
+          description:
+            "Place an anime character into a realistic background. (5:20)",
+          initialPrompt:
+            "Edit my uploaded image so the anime girl is sitting in one of the beanbag chairs in the uploaded co-working space background. Match lighting and perspective.",
+          needsImageUpload1: true,
+          image1Desc: "Anime girl",
+          needsImageUpload2: true,
+          image2Desc: "Co-working space",
+        },
+        {
+          id: "highfive-explosion",
+          title: "Surreal Image Combining (High-Five Explosion)",
+          description:
+            "Create a dramatic or surreal composite from multiple images. (5:38)",
+          initialPrompt:
+            "Combine the two uploaded images of me attempting a high-five so it looks like we are high-fiving each other. Make it look super cinematic with a large explosion in the background. Keep the purple and blue lighting theme.",
+          needsImageUpload1: true,
+          image1Desc: "My photo (left hand up)",
+          needsImageUpload2: true,
+          image2Desc: "My photo (right hand up)",
+        },
+        {
+          id: "drawing-to-photo",
+          title: "Drawing to Photorealistic",
+          description:
+            "Convert a simple line drawing into a photorealistic image. (5:51)",
+          initialPrompt:
+            "Make the uploaded drawing of a woman with red hair into a realistic Polaroid photograph with noticeable film grain.",
+          needsImageUpload1: true,
+          image1Desc: "Line drawing",
+        },
+        {
+          id: "notes-to-graphic",
+          title: "Handwritten Notes to Graphic",
+          description:
+            "Transform handwritten notes/layout into a polished graphic. (6:23)",
+          initialPrompt:
+            "Convert the uploaded handwritten sketch for a 'Happy Graduation' announcement into a clean graphic. It should feature a banner with 'Happy Graduation', a woman standing wearing a red suit on the left, and a man standing wearing a blue suit on the right.",
+          needsImageUpload1: true,
+          image1Desc: "Handwritten notes",
+        },
+        {
+          id: "background-removal",
+          title: "Background Removal (Transparent PNG)",
+          description:
+            "Remove the background from an image, making it transparent. (6:41)",
+          initialPrompt:
+            "Remove the background from the uploaded image of a wolf so it's just the wolf and the text. Make it a transparent PNG.",
+          needsImageUpload1: true,
+          image1Desc: "Image with background",
+        },
+        {
+          id: "object-removal",
+          title: "Object Removal from Scene",
+          description:
+            "Remove a specific object from an image, intelligently filling the space. (7:00)",
+          initialPrompt:
+            "Remove the robot on the right from the uploaded Ghibli-style image of me and two robots.",
+          needsImageUpload1: true,
+          image1Desc: "Ghibli image with robots",
+        },
+        {
+          id: "background-change-photo",
+          title: "Change Photo Background",
+          description:
+            "Place a subject from one photo into a completely new environment. (7:13)",
+          initialPrompt:
+            "Take the uploaded photo of a woman photographer. Remove the studio light on the right. Change the background to a lush rainforest.",
+          needsImageUpload1: true,
+          image1Desc: "Woman photographer",
+        },
+        {
+          id: "colorize-bw",
+          title: "Colorize Black & White Image",
+          description:
+            "Add realistic or stylized color to a black and white image. (7:40, 07:53)",
+          initialPrompt:
+            "Colorize the uploaded black and white image of a railroad crossing sign with bright, vibrant colors. Make the sky clear blue and the grass lush green.",
+          needsImageUpload1: true,
+          image1Desc: "B&W railroad image",
+        },
+
+        // Professional & Design
+        {
+          id: "pro-headshots",
+          title: "Professional Headshots",
+          description:
+            "Generate professional-looking headshots from a reference photo or description. (8:06)",
+          initialPrompt:
+            "Create a professional headshot of a man in his late 30s with a well-groomed beard, wearing a dark suit and tie. Studio lighting, plain grey background.",
+          needsImageUpload1: true,
+          image1Desc: "Reference photo (optional)",
+        },
+        {
+          id: "ecommerce-hat",
+          title: "E-commerce Hat Mockup",
+          description:
+            "Place a product like a hat onto a model in a lifestyle setting. (8:20)",
+          initialPrompt:
+            "Create a realistic e-commerce photo. Place the uploaded O'Neill cap on a handsome man at a sunny beach. The man should be looking off to the side.",
+          needsImageUpload1: true,
+          image1Desc: "Image of O'Neill cap",
+        },
+        {
+          id: "ecommerce-skateboard",
+          title: "E-commerce Skateboard Lifestyle Shot",
+          description: "Showcase a product in an appealing environment. (8:32)",
+          initialPrompt:
+            "Make the uploaded surfskate be resting against a wooden wall in a room that looks like a cabin, with very warm ambience and warm sunlight on it from a window to the left.",
+          needsImageUpload1: true,
+          image1Desc: "Image of surfskate",
+        },
+        {
+          id: "tshirt-mockup-nyancat",
+          title: "T-Shirt Mockup (Nyan Cat)",
+          description: "Put a design onto a t-shirt worn by a model. (8:43)",
+          initialPrompt:
+            "Please generate an image of the Nyan Cat previously generated, but this time put the image on a white t-shirt worn by a person.",
+          needsImageUpload1: true,
+          image1Desc: "Nyan Cat image",
+        },
+        {
+          id: "product-grid-nailpolish",
+          title: "Product Grid for E-commerce/Social",
+          description:
+            "Generate a grid of images showcasing a product in different ways (in use, benefits, texture). (9:02)",
+          initialPrompt:
+            "Create a 6-panel product grid for a light pink nail polish. Top-left: Product shot, white background. Top-middle: Product in use (applying to nail). Top-right: Product benefits (text: 'Strengthens, Long-lasting sheer color, High-shine finish') next to bottle. Bottom-left: Benefits of product with model hand (manicured nails). Bottom-middle: Product testimonial UGC format (smiling woman holding bottle, quote bubble: 'This polish keeps my nails strong and shiny!'). Bottom-right: Product texture shot (close-up of polish swirl).",
+          needsImageUpload1: false,
+        },
+        {
+          id: "product-mockup-shutters",
+          title: "Product Mockup (Plantation Shutters)",
+          description:
+            "Create mockups of products like custom-sized plantation shutters. (9:25)",
+          initialPrompt:
+            "Create an image of plantation shutters with 3 1/2 inch louvers, 2-panels, 60 inches wide by 60 inches tall. White color, traditional style.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "virtual-tryon-jacket",
+          title: "Virtual Fashion Try-On",
+          description: "Show how a clothing item would look on a model. (9:52)",
+          initialPrompt:
+            "Let the uploaded model wear the uploaded white puffer jacket. Maintain the same pose and background.",
+          needsImageUpload1: true,
+          image1Desc: "Model photo",
+          needsImageUpload2: true,
+          image2Desc: "Jacket photo",
+        },
+        {
+          id: "flatlay-shirt",
+          title: "Flat Lay Clothing Photography",
+          description: "Generate a flat lay shot of a clothing item. (10:14)",
+          initialPrompt:
+            "Generate a flat lay shot of the uploaded light green patterned short-sleeve button-up shirt. High definition, professional photography, neutral background.",
+          needsImageUpload1: true,
+          image1Desc: "Photo of person wearing shirt",
+        },
+        {
+          id: "clothing-extraction-hangover",
+          title: "Extract Wardrobe from Image",
+          description:
+            "Isolate clothing items from a photo for a flat lay or concept. (10:24)",
+          initialPrompt:
+            "From the uploaded image of Zach Galifianakis in The Hangover, extract his t-shirt, satchel, and white pants into a flat lay composition on a neutral background.",
+          needsImageUpload1: true,
+          image1Desc: "Hangover movie still",
+        },
+        {
+          id: "hairstyle-infographic",
+          title: "Hairstyle Infographic",
+          description:
+            "Create an infographic explaining a hairstyle, including instructions. (10:30)",
+          initialPrompt:
+            "Create an infographic titled 'HOW TO ASK FOR A FRENCHIE PIXIE SHAG'. Show a woman with this hairstyle. Include bullet points for 'Short, textured cut', 'Blending a pixie and shag', 'Soft curtain bangs', 'Longer tapered nape'. Add 'Key Instructions' like 'Blend a short pixie with a soft, French-inspired shag', 'Create natural lift and texture at the crown', 'Cut soft curtain fringe that parts and stays out of the eyes', 'Add longer, tapered layers to the nape that flip slightly'. Add 'Pro Tips' like 'Razor cutting and point cutting can help achieve the airy, textured look'.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "mullet-self",
+          title: "Give Me a Mullet!",
+          description:
+            "Virtually try on a new hairstyle, like a mullet. (10:48)",
+          initialPrompt:
+            "Give the person in the uploaded photo a stylish mullet hairstyle. Keep the face and shirt the same.",
+          needsImageUpload1: true,
+          image1Desc: "Your photo",
+        },
+
+        // Interior & Exterior Design
+        {
+          id: "house-redesign-justin",
+          title: "Exterior House Redesign",
+          description:
+            "Visualize how a house exterior would look with different paint colors or features. (11:28)",
+          initialPrompt:
+            "Take the uploaded photo of a brick and wood house. Repaint the garage door, side walls, and dormer in dark grey. The gutters, downpipe, and front door should be finished in cream white (RAL color 9001). Keep landscaping.",
+          needsImageUpload1: true,
+          image1Desc: "Original house photo",
+        },
+        {
+          id: "gazebo-kitchen",
+          title: "Outdoor Kitchen Visualization",
+          description:
+            "Design an outdoor kitchen area by sketching elements onto an existing photo. (11:48)",
+          initialPrompt:
+            "Based on the uploaded photo of a gazebo with sketched outlines, build an outdoor kitchen. Include a grill on the left (purple box), counter space with cabinets along the back wall (red outline), and a small sink/prep area on the right (blue circle). Use modern, weather-resistant materials.",
+          needsImageUpload1: true,
+          image1Desc: "Gazebo photo with sketch",
+        },
+        {
+          id: "dingy-to-aesthetic-room",
+          title: "Room Transformation (Dingy to Aesthetic)",
+          description:
+            "Revamp a dated or dingy room into a stylish, aesthetic space. (12:04)",
+          initialPrompt:
+            "Turn the uploaded image of a dingy bedroom into an aesthetic house with good lighting and professional photography. Modernize furniture, update colors to a warm neutral palette, add stylish decor.",
+          needsImageUpload1: true,
+          image1Desc: "Dingy room photo",
+        },
+        {
+          id: "rip-interior-designers",
+          title: "Quick Bedroom Redesign",
+          description: "Rapidly visualize a new look for a bedroom. (12:13)",
+          initialPrompt:
+            "Redesign the uploaded bedroom image. Change wall color to a soft olive green, add modern dark wood bed with light green bedding, install large window with green curtains, update lighting. Improve overall aesthetic appeal.",
+          needsImageUpload1: true,
+          image1Desc: "Original bedroom photo",
+        },
+        {
+          id: "balcony-redesign",
+          title: "Balcony Furnishing & Layout",
+          description:
+            "Visualize furniture and plant arrangements for a balcony space. (12:23)",
+          initialPrompt:
+            "Based on the uploaded photo of a balcony with sketches, furnish it with two wicker armchairs and a small round table (red outlines), and two large potted plants (blue circles). Keep the city view. Sunny day.",
+          needsImageUpload1: true,
+          image1Desc: "Balcony photo with sketch",
+        },
+
+        // Infographics & Visualizations
+        {
+          id: "moodboard-rory",
+          title: "Moodboard Creation (with Hex Codes)",
+          description:
+            "Generate a moodboard for a theme, specifying colors with hex codes. (12:57)",
+          initialPrompt:
+            "Create a vertical mood board collage in 3:4 ratio with a clean, minimalist layout on a soft ice-blue (#E6EFF4) background. Central image: stylish Black man in a white technical puffer jacket (#F8F8F9), navy beanie (#1F2F45), and white snow goggles. Surrounding images: jagged mountain peak in grayscale (#1F2F45 shadows), Arctic seascape with floating icebergs in muted cyan (#8BD5DD), close-up of puffer jacket quilted texture (#F8F8F9), close-up texture shot of thick gray knit wool fabric (#5D5F62 & #2E2F31). Portraits of men wearing deep navy winter jackets (#2B3A4C) and beanies. Two minimalist flat design illustrations of men in winter clothing matching the same color palette. Color palette swatches arranged vertically: ice blue (#E6EFF4), pure white (#F8F8F9), stone gray (#C3C6CE), and navy black (#1F2F45). Use soft, diffused lighting with no harsh shadows.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "newton-prism-infographic",
+          title: "Scientific Infographic (Newton's Prism)",
+          description:
+            "Create an educational infographic explaining a scientific concept. (13:30)",
+          initialPrompt:
+            "Show Isaac Newton conducting his prism experiment as an infographic. Title: 'Newton's Prism Experiment'. Illustrate sunlight entering a prism and splitting into a spectrum. Label 'Sunlight', 'Prism', 'Spectrum'. Show Newton observing. Clear, educational style.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "childrens-book-alien",
+          title: "Children's Book Illustration",
+          description:
+            "Illustrate pages for a children's book with consistent character style. (13:43)",
+          initialPrompt:
+            "Create a children's book illustration for 'The Very Hungry Alien'. Show a friendly-looking alien (green, big eyes) chasing a small girl (brown curly hair, determined expression, holding a toy laser gun) and her orange tabby cat. Whimsical, slightly retro storybook style.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "comic-immune-cells",
+          title: "Educational Comic Strip (Immune Cells)",
+          description:
+            "Design a comic strip to explain a complex topic in an engaging way. (14:20)",
+          initialPrompt:
+            "Create a comic book page about immune cells (T-cells). Style: retro comic book, vibrant colors. Panel 1: Title 'Guardians Within: Birth'. Text: 'In the hidden chambers of thymus...'. Scene: Abstract, organic pathways. Panel 2: Text: 'Here, in a quiet sanctuary, T-cells awaken...'. Scene: A single T-cell (spherical, determined expression) in a sanctuary-like environment. Panel 3: Text: 'A path awaits...'. Scene: The T-cell starting on a winding path.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "comic-llms",
+          title: "Explainer Comic (LLMs)",
+          description:
+            "Visually explain a concept using a comic format with distinct characters. (14:36)",
+          initialPrompt:
+            "Create an explainer comic titled 'Understanding LLMs - A Comic by Kyle'. Feature a friendly human character teaching a curious robot about LLMs. Use clear panels and speech bubbles. Style: clean, modern cartoon with a slightly techy feel. Panel 1: Human gestures to a brain icon, Robot looks inquisitive. Human: 'LLMs are like super-smart brains!'",
+          needsImageUpload1: false,
+        },
+        {
+          id: "venn-diagram-self",
+          title: "Venn Diagram Infographic",
+          description:
+            "Create a visually appealing Venn diagram to represent overlapping concepts. (14:50)",
+          initialPrompt:
+            "Create a beautiful Venn diagram with three overlapping circles. One circle labeled 'Entrepreneur' (yellow-orange). One circle labeled 'Creator' (teal-blue). The third circle labeled 'AI Tech Nerd' (blue-green). Where all three overlap, it should say 'Me'. Make it colorful and artful, like a high-quality infographic.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "neural-network-infographic",
+          title: "How Neural Networks Work Infographic",
+          description:
+            "Design an infographic to explain how neural networks function. (15:00)",
+          initialPrompt:
+            "Create a colorful, beautifully designed infographic that explains how a neural network works. Title: 'How a Neural Network Works'. Sections: Input Layer, Hidden Layers, Output Layer. Illustrate connections between nodes. Brief explanations for 'Inputs', 'Weights', 'Summing the Inputs', 'Output'. Dark background, neon-like colors for nodes and connections.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "diffusion-model-infographic",
+          title: "How Diffusion Models Work Infographic",
+          description:
+            "Visually explain the process of diffusion models in image generation. (15:19)",
+          initialPrompt:
+            "Create an infographic explaining 'How a Diffusion Model Works'. Panel 1: Image of a cat, arrow to 'Add Noise', resulting in a noisy image. Panel 2: Noisy image, arrow to 'Reverse Process (Diffusion Model)', resulting in a brain icon labeled 'Diffusion Model'. Panel 3: Brain icon, arrow to 'Generate Image', resulting in the original cat image. Use a clean, modern style with cute cat illustration.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "reinforcement-learning-infographic",
+          title: "How Reinforcement Learning Works Infographic",
+          description: "Illustrate the reinforcement learning process. (15:21)",
+          initialPrompt:
+            "Create an infographic explaining 'How Reinforcement Learning Works'. Four main components: 'Environment' (grid with agent), 'Agent' (cute robot), 'Action' (rocket taking off), 'Reward' (gold star). Show arrows indicating the agent interacts with environment, takes an action, receives a reward, and learns. Colorful, engaging design.",
+          needsImageUpload1: false,
+        },
+
+        // UI/UX & Advertising
+        {
+          id: "website-design-dark",
+          title: "Dark-Themed Website Homepage",
+          description:
+            "Design a homepage for a digital agency with a modern, dark theme. (16:42)",
+          initialPrompt:
+            "A modern, dark-themed digital agency website homepage with a clean, minimal interface. Background: black gradient with subtle abstract stone textures. At the center, two floating smartphones with dynamic 3D perspective showcase high-contrast, bold advertisements – one with a black-and-white ad for a men's fragrance brand, the other with a vibrant purple tech-themed campaign. Headline text reads 'We Deliver Growth' with 'Growth' in a bold golden gradient. Clean top navigation bar includes links like About Us, Creative, Performance, Case Studies, Blog, and Careers. Agency name 'DEZIGN' appears in bright yellow in the top-left corner, and a 'Get in Touch' button in matching yellow is placed on the top-right. A small badge reading 'Available for work' floats above the headline.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "website-thumbnail-maker",
+          title: "SaaS App Website UI (Thumbnail Maker)",
+          description:
+            "Design the UI for a SaaS application, e.g., a YouTube thumbnail maker. (16:52)",
+          initialPrompt:
+            "Create an image of the first section of a website UI for a highly modern SaaS app for a YouTube Thumbnail maker. It should be called 'TubeNail'. Use highly modern, visual appealing colors with fancy gradients (purples, blues, pinks). Headline: 'Create YouTube Thumbnails with Ease'. Sub-headline: 'Design eye-catching thumbnails in just a few clicks with our powerful online tool.' Buttons: 'Get Started', 'Watch Demo'. Below hero, show example thumbnails (e.g., 'Biggest Mistakes', 'How to Make $5000', 'New iPhone Review').",
+          needsImageUpload1: false,
+        },
+        {
+          id: "website-variations-a16z",
+          title: "Website Landing Page Variations",
+          description:
+            "Generate multiple design variations for a landing page based on a brand. (17:09)",
+          initialPrompt:
+            "Create a landing page design for 'Andreessen Horowitz'. Style: elegant, professional, modern. Main call to action: 'Sign up to stay informed.' Include fields for 'First Name' and 'Business Email Address', and a 'Subscribe' button. Background should be an artistic interpretation of innovation and technology, featuring a stylized golden coin with a robot. Dark color scheme, primarily deep reds and blues.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "ad-pepsi",
+          title: "Product Advertisement (Pepsi)",
+          description: "Create compelling ad visuals for products. (18:18)",
+          initialPrompt:
+            "A dynamic advertisement for Pepsi. Show a Pepsi can with condensation, ice cubes splashing around it, and a vibrant, energetic background. Focus on refreshment and excitement. Modern, glossy style.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "ad-venom-water",
+          title: "Product Ad (Venom Sparkling Water)",
+          description: "Design an ad for a fictional or real beverage. (18:31)",
+          initialPrompt:
+            "Advertisement for 'VENOM Sparkling Water - Naturally Essenced'. Show a sleek aluminum can with blue wave-like design elements and water droplets. Tagline: 'Sparkling Water, Refreshingly Pure'. Clean, minimalist background.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "ad-haircare-lion",
+          title: "Haircare Product Ad (Tame Your Mane)",
+          description:
+            "Create a conceptual ad for a haircare product using metaphor. (18:37)",
+          initialPrompt:
+            "Create an ad for a keratin shampoo brand. Side-by-side view of 'Before' and 'After' a lion. 'Before' image: lion with a crazy, frizzy mane. 'After' image: same lion with a smooth, straight, shiny mane. Add the shampoo bottle (small, keratin smooth type) in the right corner of 'After' image. Add copy 'TAME YOUR MANE' centered at the bottom. Dark, dramatic background.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "ad-madmen-toothpaste",
+          title: "Mad Men Style Print Ad (Toothpaste)",
+          description:
+            "Design a print ad in a specific vintage style (e.g., Mad Men) for a product. (18:47)",
+          initialPrompt:
+            "Create a Mad Men style print ad for 'Vicco Vajradanti' Indian toothpaste. Feature the toothpaste tube and box. Headline: 'Your Grandmother Was Right.' Body copy: '18 herbs. Zero chemicals. One reason to smile like never before...'. Style: vintage colors, classic typography, imagery of cinnamon sticks and cloves. Small 'Ayurvedic Product, Proudly Indian' logo.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "icon-pack-travel",
+          title: "3D Icon Pack (Travel)",
+          description:
+            "Generate a set of 3D icons with a consistent theme and style. (19:14)",
+          initialPrompt:
+            "Create a pack of four 3D icons for a travel app, all with a consistent soft green monochromatic style and subtle lighting. Icons: an airplane, a bicycle, a smartphone displaying a map route, and a hiker with a backpack and walking stick. Black background.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "icon-pack-kubadesign",
+          title: "3D Glassmorphism Icons",
+          description:
+            "Design icons with a specific modern UI style like glassmorphism. (19:27)",
+          initialPrompt:
+            "Create a set of four consistent 3D icons in a colorful glassmorphism style (soft, translucent, vibrant gradients). Icons: a calendar, a rocket ship, a cat silhouette, and a cloud. Light background. For a tutorial on 'Create Consistent 3D Icons in 5 Minutes'.",
+          needsImageUpload1: false,
+        },
+
+        // More Niche & Fun
+        {
+          id: "fake-receipt",
+          title: "Fake Receipt Generation (Ethical Note!)",
+          description:
+            "Generate realistic-looking receipts. (Use responsibly! For demo purposes only.) (33:50)",
+          initialPrompt:
+            "A realistic-looking restaurant receipt for 'London Italian Fusion Street', 281 Oxford Street, London. Receipt: 7148. Server: Emily. Date: 23/04/2025, 19:28. Items: Burrata £14.00, Calamari £13.00, Beef Carpaccio £16.00, Lobster Risotto £32.00, Sea Bass £33.00, Tagliata £36.00, Tiramisu £9.00, Gelato £7.00, Prosecco £45.00, Barolo £150.00. Subtotal £355.00. Service Charge 12.5% £44.38. Total £1500.00. Crumpled paper texture, laid on a wooden table.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "fake-autograph",
+          title: "Fake Autograph on Photo",
+          description:
+            "Add a realistic-looking autograph to a photo. (For demo only!) (34:14)",
+          initialPrompt:
+            "A portrait photo of Michael Jordan in his Chicago Bulls jersey, with a 'genuine' looking black marker autograph saying 'Michael Jordan' across the chest.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "fake-damaged-product",
+          title: "Fake Damaged Product Photo",
+          description:
+            "Create an image of a product that appears damaged in its shipping box. (For demo only!) (34:24)",
+          initialPrompt:
+            "A photo looking into an open Amazon cardboard box. Inside, there is crumpled brown packing paper and a bottle of 'CREED Aventus' cologne that appears to be broken, with shards of glass and spilled liquid. The box has the Amazon smile logo.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "dudewheresmycar-tamagotchi",
+          title: "Movie Scene as Tamagotchi Screen",
+          description:
+            "Reimagine a movie scene as if it were on a Tamagotchi screen. (31:36)",
+          initialPrompt:
+            "A Tamagotchi pet screen. The game on screen is 'Dude, Where's My Car?'. Show pixelated versions of Ashton Kutcher and Seann William Scott looking confused, with a small dog. Palm trees in background. Yellow Tamagotchi device casing with paw prints and hearts.",
+          needsImageUpload1: false,
+        },
+        {
+          id: "beaniebabies-thecraft",
+          title: "Movie Characters as Beanie Babies",
+          description:
+            "Turn movie characters into Beanie Baby style plush toys. (32:51)",
+          initialPrompt:
+            "A Beanie Babies style advertisement for 'The Craft'. Show the four main female characters from the movie The Craft as Beanie Baby teddy bears, each wearing their character's iconic school uniform style. Include the 'Ty' heart logo. Text: 'Magic fills the air...'. Dark, mystical background.",
+          needsImageUpload1: false,
+        },
+      ];
+
+      const SamAltmanTweet1 = () => (
+        <div className="tweet-card">
+          <div className="tweet-header">
+            <img
+              src="https://pbs.twimg.com/profile_images/804990434455887872/BG0Xh7Oa_400x400.jpg"
+              alt="Sam Altman Avatar"
+              className="tweet-avatar"
+            />
+            <div>
+              <span className="tweet-author">
+                <strong>Sam Altman</strong>{" "}
+                <span className="text-gray-500">@sama · Mar 29, 2025</span>
+              </span>
+            </div>
+          </div>
+          <p className="tweet-content">
+            can yall please chill on generating images this is insane our team
+            needs sleep
+          </p>
+          <div className="tweet-meta">
+            10:02 PM · Mar 29, 2025 · 15.8M Views
+          </div>
+        </div>
+      );
+
+      const SamAltmanTweet2 = () => (
+        <div className="tweet-card">
+          <div className="tweet-header">
+            <img
+              src="https://pbs.twimg.com/profile_images/804990434455887872/BG0Xh7Oa_400x400.jpg"
+              alt="Sam Altman Avatar"
+              className="tweet-avatar"
+            />
+            <div>
+              <span className="tweet-author">
+                <strong>Sam Altman</strong>{" "}
+                <span className="text-gray-500">@sama · Mar 31, 2025</span>
+              </span>
+            </div>
+          </div>
+          <p className="tweet-content">
+            chatgpt image gen now rolled out to all free users!
+          </p>
+          <div className="tweet-meta">5:33 PM · Mar 31, 2025 · 1.4M Views</div>
+        </div>
+      );
+
+      function TryItCard({ idea }) {
+        const { apiKey } = React.useContext(AppContext);
+        const [prompt, setPrompt] = React.useState(idea.initialPrompt || "");
+        const [image1File, setImage1File] = React.useState(null);
+        const [image2File, setImage2File] = React.useState(null);
+        const [image1Preview, setImage1Preview] = React.useState(null);
+        const [image2Preview, setImage2Preview] = React.useState(null);
+        const [generatedImageUrl, setGeneratedImageUrl] = React.useState(null);
+        const [isLoading, setIsLoading] = React.useState(false);
+        const [error, setError] = React.useState(null);
+
+        const handleImageChange = (event, setImageFile, setImagePreview) => {
+          const file = event.target.files[0];
+          if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+          } else {
+            setImageFile(null);
+            setImagePreview(null);
+          }
+        };
+
+        const handleGenerate = async () => {
+          if (!apiKey) {
+            setError(
+              "Please enter your OpenAI API Key above to generate images."
+            );
+            return;
+          }
+          setIsLoading(true);
+          setGeneratedImageUrl(null);
+          setError(null);
+
+          let combinedPrompt = prompt;
+          if (idea.needsImageUpload1 && image1File) {
+            combinedPrompt = `Based on an uploaded image (conceptually: ${
+              idea.image1Desc || "first image"
+            }), ${prompt}`;
+          }
+          if (idea.needsImageUpload2 && image2File) {
+            combinedPrompt = `Based on two uploaded images (conceptually: ${
+              idea.image1Desc || "first image"
+            } and ${idea.image2Desc || "second image"}), ${prompt}`;
+          }
+
+          try {
+            const response = await fetch(
+              "https://api.openai.com/v1/images/generations",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                  model: "dall-e-3", // DALL-E 3 is a good public model
+                  prompt: combinedPrompt,
+                  n: 1,
+                  size: "1024x1024",
+                  response_format: "b64_json",
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(
+                errorData.error
+                  ? errorData.error.message
+                  : `HTTP error! status: ${response.status}`
+              );
+            }
+
+            const data = await response.json();
+            if (data.data && data.data[0] && data.data[0].b64_json) {
+              setGeneratedImageUrl(
+                `data:image/png;base64,${data.data[0].b64_json}`
+              );
+            } else {
+              throw new Error("No image data received from API.");
+            }
+          } catch (err) {
+            console.error("API Error:", err);
+            setError(
+              `Failed to generate image: ${err.message}. Check console for details.`
+            );
+            setGeneratedImageUrl(null); // Clear any previous image
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        // Reset generated image if prompt or files change
+        React.useEffect(() => {
+          setGeneratedImageUrl(null);
+        }, [prompt, image1File, image2File]);
+
+        return (
+          <div className="idea-card">
+            <div className="flex items-baseline mb-1">
+              <h3 className="text-sky-400">{idea.title}</h3>
+              {idea.videoTimestamp && (
+                <span className="timestamp">
+                  (Video: {idea.videoTimestamp})
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-400 mb-3">{idea.description}</p>
+
+            <div className="mb-3">
+              <label
+                htmlFor={`prompt-${idea.id}`}
+                className="block text-xs font-medium text-gray-300 mb-1"
+              >
+                Prompt:
+              </label>
+              <textarea
+                id={`prompt-${idea.id}`}
+                className="input-field text-sm h-24 resize-y"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe the image you want..."
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              {idea.needsImageUpload1 && (
+                <div>
+                  <label
+                    htmlFor={`image1-${idea.id}`}
+                    className="block text-xs font-medium text-gray-300 mb-1"
+                  >
+                    {idea.image1Desc
+                      ? `${idea.image1Desc}:`
+                      : "Upload Image 1 (for reference):"}
+                  </label>
+                  <input
+                    type="file"
+                    id={`image1-${idea.id}`}
+                    accept="image/*"
+                    onChange={(e) =>
+                      handleImageChange(e, setImage1File, setImage1Preview)
+                    }
+                    className="input-field text-xs"
+                  />
+                  {image1Preview && (
+                    <img
+                      src={image1Preview}
+                      alt="Preview 1"
+                      className="image-preview"
+                    />
+                  )}
+                </div>
+              )}
+              {idea.needsImageUpload2 && (
+                <div>
+                  <label
+                    htmlFor={`image2-${idea.id}`}
+                    className="block text-xs font-medium text-gray-300 mb-1"
+                  >
+                    {idea.image2Desc
+                      ? `${idea.image2Desc}:`
+                      : "Upload Image 2 (for reference):"}
+                  </label>
+                  <input
+                    type="file"
+                    id={`image2-${idea.id}`}
+                    accept="image/*"
+                    onChange={(e) =>
+                      handleImageChange(e, setImage2File, setImage2Preview)
+                    }
+                    className="input-field text-xs"
+                  />
+                  {image2Preview && (
+                    <img
+                      src={image2Preview}
+                      alt="Preview 2"
+                      className="image-preview"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={handleGenerate}
+              className="btn-primary w-full text-sm"
+              disabled={isLoading}
+            >
+              {isLoading ? "Generating..." : "Generate Image"}
+            </button>
+
+            {isLoading && <div className="loading-spinner"></div>}
+
+            {error && (
+              <p className="text-red-400 text-xs mt-2 text-center">{error}</p>
+            )}
+
+            {generatedImageUrl && !isLoading && (
+              <div className="generated-image-container mt-3">
+                <img src={generatedImageUrl} alt="Generated by AI" />
+              </div>
+            )}
+            <p className="text-xs text-gray-600 mt-2 text-center">
+              массовых API calls are real. Ensure you have API credits. Uploaded
+              images are for prompt reference only.
+            </p>
+          </div>
+        );
+      }
+
+      function App() {
+        const [apiKey, setApiKey] = React.useState("");
+        const videoRef = React.useRef(null);
+
+        const handleTimeUpdate = (timestamp) => {
+          if (videoRef.current) {
+            const timeParts = timestamp.split(":");
+            const seconds =
+              parseInt(timeParts[0], 10) * 60 + parseInt(timeParts[1], 10);
+            videoRef.current.currentTime = seconds;
+            videoRef.current.play();
+          }
+        };
+
+        const sortedIdeas = ideas.sort((a, b) => {
+          const timeA = a.videoTimestamp
+            ? parseInt(a.videoTimestamp.split(":")[0]) * 60 +
+              parseInt(a.videoTimestamp.split(":")[1].split(",")[0])
+            : Infinity;
+          const timeB = b.videoTimestamp
+            ? parseInt(b.videoTimestamp.split(":")[0]) * 60 +
+              parseInt(b.videoTimestamp.split(":")[1].split(",")[0])
+            : Infinity;
+          return timeA - timeB;
+        });
+
+        return (
+          <AppContext.Provider value={{ apiKey }}>
+            <div className="container mx-auto p-4 md:p-6 lg:p-8">
+              <header className="text-center mb-10">
+                <h1 className="text-4xl sm:text-5xl font-bold text-sky-400 mb-3">
+                  ChatGPT-4o Image Generation
+                </h1>
+                <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+                  Explore 50+ mind-blowing ways to use OpenAI's ChatGPT-4o for
+                  image generation, inspired by Matt Wolfe's video and the
+                  creative community. Enter your API key below to try them live!
+                </p>
+              </header>
+
+              <div className="video-container mb-8">
+                <iframe
+                  width="560"
+                  height="315"
+                  src="https://www.youtube.com/embed/0ahIpX6H2Fw?si=L6vEh1w2zg-MjZgn"
+                  title="YouTube video player"
+                  frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerpolicy="strict-origin-when-cross-origin"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              <p className="text-center text-sm text-gray-400 mb-8">
+                Click timestamps in idea cards to jump to that part of the
+                (placeholder) video.
+              </p>
+
+              <div className="mb-8 p-6 bg-gray-800 rounded-lg shadow-lg">
+                <h2 className="text-2xl font-semibold text-sky-400 mb-3">
+                  OpenAI API Key
+                </h2>
+                <div className="api-warning text-xs">
+                  <p>
+                    <strong>SECURITY WARNING:</strong> For demonstration
+                    purposes only. Never expose your API key in client-side code
+                    on a public website. This key is stored in your browser's
+                    local state and is NOT sent to any server other than
+                    OpenAI's API directly from your browser.
+                  </p>
+                  <p>
+                    Ensure you understand the risks and usage costs associated
+                    with your OpenAI API key.
+                  </p>
+                </div>
+                <input
+                  type="password"
+                  className="api-key-input"
+                  placeholder="Enter your OpenAI API Key (sk-...)"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+                <p className="text-xs text-gray-500">
+                  Your API key is needed to make live calls to DALL-E 3. It's
+                  not stored persistently beyond this session if you refresh.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <SamAltmanTweet1 />
+                <SamAltmanTweet2 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {sortedIdeas.map((idea) => (
+                  <TryItCard
+                    key={idea.id}
+                    idea={{ ...idea, handleTimeUpdate }}
+                  />
+                ))}
+              </div>
+
+              <footer className="text-center mt-12 py-6 border-t border-gray-700">
+                <p className="text-gray-500 text-sm">
+                  This interactive page demonstrates capabilities shown in Matt
+                  Wolfe's video on ChatGPT-4o image generation.
+                </p>
+                <p className="text-gray-500 text-sm">
+                  All creative credits for original concepts belong to the
+                  respective creators mentioned in the video.
+                </p>
+              </footer>
+            </div>
+          </AppContext.Provider>
+        );
+      }
+
+      ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
+  </body>
+</html>
