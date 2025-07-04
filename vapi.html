@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vapi AI Integration</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5f5f5;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Vapi button will be injected and centered -->
+    <script>
+      var vapiInstance = null;
+      const assistant = "15dcb18a-934e-46a9-bba2-2b990011a3ab"; // Substitute with your assistant ID
+      const apiKey = "37433e60-57ab-478e-a33e-dda9d259e7aa"; // Substitute with your Public key from Vapi Dashboard.
+      const buttonConfig = {
+        position: "center", // Try to center the button if supported
+        style: {
+          position: "static",
+          margin: "0 auto",
+          display: "block",
+        },
+      };
+
+      (function (d, t) {
+        var g = document.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+        g.src =
+          "https://cdn.jsdelivr.net/gh/VapiAI/html-script-tag@latest/dist/assets/index.js";
+        g.defer = true;
+        g.async = true;
+        s.parentNode.insertBefore(g, s);
+
+        g.onload = function () {
+          vapiInstance = window.vapiSDK.run({
+            apiKey: apiKey, // mandatory
+            assistant: assistant, // mandatory
+            config: buttonConfig, // optional
+          });
+        };
+      })(document, "script");
+    </script>
+  </body>
+</html>
